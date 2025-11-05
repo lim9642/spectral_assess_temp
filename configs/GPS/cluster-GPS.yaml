@@ -31,7 +31,7 @@ train:
   mode: custom
   batch_size: 16
   eval_period: 1
-  ckpt_period: 100
+  ckpt_period: 1
 model:
   type: GPSModel
   loss_fun: weighted_cross_entropy
