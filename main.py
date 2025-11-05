@@ -119,6 +119,11 @@ if __name__ == '__main__':
     # Load config file
     set_cfg(cfg)
     load_cfg(cfg, args)
+    # Manually override the value from the YAML file.
+    cfg.train.ckpt_period = 1
+    # print statement to confirm the change.
+    print(f"[*] Overriding ckpt_period. New value: {cfg.train.ckpt_period}")
+  
     custom_set_out_dir(cfg, args.cfg_file, cfg.name_tag)
     dump_cfg(cfg)
     # Set Pytorch environment
