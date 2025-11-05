@@ -30,6 +30,62 @@ from graphgps.logger import create_logger
 torch.backends.cuda.matmul.allow_tf32 = True  # Default False in PyTorch 1.12+
 torch.backends.cudnn.allow_tf32 = True  # Default True
 
+# ---------------- START CUSTOM CODE FOR SAVING ACTIVATIONS ----------------
+
+# Helper class to capture activations using forward hooks
+class ActivationSaver:
+    def __init__(self):
+        self.activations = {}
+        self.handles = []
+
+    def _get_hook(self, name):
+        def hook(model, input, output):
+            # The output of a GPS layer can be a tuple (x, ...), we only want the node features `x`
+            if isinstance(output, tuple):
+                self.activations[name] = output[0].detach().cpu()
+            else:
+                self.activations[name] = output.detach().cpu()
+        return hook
+
+    def attach_hooks(self, model):
+        # This function assumes you are using a GPSModel.
+        # It attaches a hook to every layer in the 'gt.layers' module list.
+        if hasattr(model, 'gt') and hasattr(model.gt, 'layers'):
+            for i, layer in enumerate(model.gt.layers):
+                handle = layer.register_forward_hook(self._get_hook(f'gt.layer.{i}'))
+                self.handles.append(handle)
+        logging.info(f"[*] Attached {len(self.handles)} hooks to the model's GPS layers.")
+
+    def clear_hooks(self):
+        for handle in self.handles:
+            handle.remove()
+
+# Custom logger to save the captured activations on checkpoint epochs
+class CustomActivationLogger:
+    def __init__(self, activation_saver, save_dir, cfg_train):
+        self.saver = activation_saver
+        self.save_dir = save_dir
+        self.cfg = cfg_train
+        # Ensure the save directory exists
+        os.makedirs(self.save_dir, exist_ok=True)
+
+    def write_epoch(self, stats):
+        epoch = stats['epoch']
+        # Check if it's a checkpoint epoch (and not the first epoch)
+        if epoch > 0 and self.cfg.ckpt_period > 0 and epoch % self.cfg.ckpt_period == 0:
+            save_path = os.path.join(self.save_dir, f'activations_epoch_{epoch}.pt')
+            logging.info(f"[*] Saving activations for epoch {epoch} to {save_path}")
+            # The activations are from the last batch processed (usually validation)
+            torch.save(self.saver.activations, save_path)
+            
+    # The framework requires these other methods, so we add placeholders
+    def update_stats(self, stats, split):
+        pass
+
+    def close(self):
+        self.saver.clear_hooks()
+
+# ----------------  END CUSTOM CODE FOR SAVING ACTIVATIONS  ----------------
 
 def new_optimizer_config(cfg):
     return OptimizerConfig(optimizer=cfg.optim.optimizer,
