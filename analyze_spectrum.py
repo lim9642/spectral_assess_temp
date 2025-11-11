@@ -1,5 +1,7 @@
 %%writefile analyze_spectrum.py
+# This magic command creates the python file in the current directory.
 
+# --- START: ROBUST PATH FIX ---
 # This block ensures that the script can find the 'graphgps' module
 import sys
 import os
@@ -11,15 +13,16 @@ project_root = os.path.dirname(os.path.abspath(__file__))
 # Add the project root to the Python path
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
+# --- END: ROBUST PATH FIX ---
+
 
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
 from torch_geometric.loader import DataLoader
 import argparse
-import os
 
-# --- Standard GraphGPS Imports ---
+# --- Standard GraphGPS Imports (should work now) ---
 from graphgps.utility.utils import load_cfg, set_cfg
 from graphgps.model_builder import create_model
 from graphgps.loader.dataset.factory import create_dataset
@@ -109,7 +112,6 @@ def analyze(cfg_file, ckpt_path, dataset_split='test', output_dir='.'):
     plt.legend()
     plt.grid(True, linestyle='--', alpha=0.6)
     
-    # Save the plot to a file
     plot_path = os.path.join(output_dir, "spectral_analysis_plot.png")
     plt.savefig(plot_path)
     print(f"Plot saved to {plot_path}")
