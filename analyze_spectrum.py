@@ -1,5 +1,16 @@
 %%writefile analyze_spectrum.py
-# This magic command creates the python file in the current directory.
+
+# This block ensures that the script can find the 'graphgps' module
+import sys
+import os
+
+# Get the absolute path of the directory containing this script
+# e.g., /content/spectral_assess_temp/
+project_root = os.path.dirname(os.path.abspath(__file__))
+
+# Add the project root to the Python path
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 import torch
 import numpy as np
