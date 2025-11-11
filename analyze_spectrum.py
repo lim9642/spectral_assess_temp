@@ -1,5 +1,3 @@
-%%writefile analyze_spectrum.py
-# This magic command creates the python file in the current directory.
 
 # --- START: ROBUST PATH FIX ---
 # This block ensures that the script can find the 'graphgps' module
